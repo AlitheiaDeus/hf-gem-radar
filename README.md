@@ -6,7 +6,7 @@ A modular intelligence tool engineered to scout, score, and surface standout ope
 
 ## Quickstart
 
-Run with one command (defaults to your operational range `3B–12B`, LLMs & MMLLMs, post-2024 cutoff):
+Run with one command (defaults to your operational range `3B–6B`, LLMs & MMLLMs, 1 page cap, post-2024 cutoff):
 ```bash
 python radar.py
 ```
@@ -17,12 +17,19 @@ python radar.py
 # Focus strictly on GGUF quantized models for local offload
 python radar.py --gguf-only
 
+# API Sort Strategy: pull by likes or trendingScore instead of default downloads
+python radar.py --sort likes
+python radar.py --sort trendingScore
+
+# Page limit control (default is 1 page for fast sweeps; pass 0 or -1 for unlimited)
+python radar.py --max-pages 0
+
+# Include full raw tags column in output CSV (omitted by default for clean sheets)
+python radar.py --tagdump
+
 # Expand operational envelope up to 14B or 32B
 python radar.py --params "min:0,max:14B"
 python radar.py --params "min:6B,max:32B"
-
-# Quick scan (e.g. limit to first 5 pages per tag)
-python radar.py --max-pages 5
 
 # Deep multi-angle keyword search (abliterated, uncensored, RP, SillyTavern)
 python radar.py --mode keywords
@@ -58,12 +65,12 @@ Mainstream Hugging Face sorting only shows models with hundreds of thousands of 
 
 ---
 
-## Leaderboards Surfaced by Default
+## Leaderboards & Archetypes Surfaced by Default
 
 Every scan automatically analyzes and renders four curated leaderboards:
 1. 💎 **Top Hidden Gems**: Outlier models with high appreciation and high quality angles, fame-capped to filter out the multi-million download corporate giants.
 2. 👁️ **Standout Local MMLLMs**: Multimodal vision/video models (`image-text-to-text`, `video-text-to-text`) in your local VRAM range.
-3. 🔓 **Top Uncensored & Abliterated Crafts**: Specialized de-aligned, abliterated, and creative roleplay fine-tunes.
+3. 🔓 **Top Derailed Crafts (`Is_Derailed`)**: Fine-tunes flagged as either `Is_Uncensored` or `Is_Abliterated` (independent columns, combined into the Derailed OR metric).
 4. ⚡ **Top GGUF Models**: Quantized models ranked by 2D engagement magnitude.
 
 ---

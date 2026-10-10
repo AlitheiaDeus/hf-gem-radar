@@ -104,6 +104,12 @@ def parse_args():
         help="API sort order when pulling models (default: 'downloads'). Options: downloads, likes, trendingScore"
     )
     parser.add_argument(
+        "--tagdump",
+        action="store_true",
+        default=False,
+        help="Include raw 'tags' column in the output CSV (default: False)"
+    )
+    parser.add_argument(
         "--output", "-o",
         default="huggingface_snapshot.csv",
         help="Path to export the full analyzed dataset CSV (default: 'huggingface_snapshot.csv')"
@@ -125,6 +131,7 @@ def main():
     print(f"  API Sort Strategy : {args.sort}")
     print(f"  Recency Cutoff    : {args.after if args.after else 'None (All time)'}")
     print(f"  Max Pages / Tag   : {effective_max_pages if effective_max_pages is not None else 'Unlimited'}")
+    print(f"  Dump Tags Column  : {'Yes' if args.tagdump else 'No (use --tagdump to include)'}")
     print(f"  Output CSV Target : {args.output}")
     print("=" * 75 + "\n")
 
@@ -151,7 +158,7 @@ def main():
     display_full_radar_summary(models)
 
     # Export full dataset with all calculated metrics
-    export_to_csv(models, args.output)
+    export_to_csv(models, args.output, include_tags=args.tagdump)
 
 
 if __name__ == "__main__":

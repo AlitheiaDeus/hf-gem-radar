@@ -9,14 +9,26 @@ GGUF quantized crafts, and top uncensored/abliterated models.
 import csv
 from typing import List, Dict, Any, Optional
 
-CSV_COLUMNS = [
-    "modelId", "author", "createdAt", "lastModified", "Date_Created",
+BASE_CSV_COLUMNS = [
+    "modelId", "author", "createdAt", "yearCreated", "lastModified", "yearModified", "Date_Created",
     "pipeline_tag", "likes", "log10_likes", "downloads", "log10_downloads",
     "magnitude", "DL_Mag", "DL_Mag_log", "trendingScore", 
     "appreciation_rate", "quality_angle", "gem_residual",
-    "Is_GGUF", "Is_Safetensors", "Is_Uncensored", "Is_Abliterated", 
-    "Is_Roleplay", "Is_MMLLM", "tags", "url"
+    "Is_GGUF", "Is_Safetensors", "Is_Uncensored", "Is_Abliterated", "Is_Derailed",
+    "Is_Roleplay", "Is_MMLLM", "url"
 ]
+
+
+def get_csv_columns(include_tags: bool = False) -> List[str]:
+    """Generates the CSV column list, optionally inserting 'tags' before 'url'."""
+    cols = list(BASE_CSV_COLUMNS)
+    if include_tags:
+        url_idx = cols.index("url") if "url" in cols else len(cols)
+        cols.insert(url_idx, "tags")
+    return cols
+
+
+CSV_COLUMNS = get_csv_columns(include_tags=True)
 
 
 def filter_hidden_gems(
@@ -60,9 +72,13 @@ def filter_mmllm_standouts(models: List[Dict[str, Any]]) -> List[Dict[str, Any]]
 
 
 def filter_uncensored_gems(models: List[Dict[str, Any]], min_likes: int = 5) -> List[Dict[str, Any]]:
-    """Filters for abliterated, uncensored, and dealigned fine-tunes ranked by quality angle."""
-    unc = [m for m in models if (m.get("Is_Uncensored") == 1 or m.get("Is_Abliterated") == 1) and m["likes"] >= min_likes]
+    """Filters for derailed (uncensored or abliterated) fine-tunes ranked by quality angle."""
+    unc = [m for m in models if m.get("Is_Derailed") == 1 and m["likes"] >= min_likes]
     return sorted(unc, key=lambda x: (x["quality_angle"], x["gem_residual"]), reverse=True)
+
+
+# Semantic alias
+filter_derailed_gems = filter_uncensored_gems
 
 
 def filter_gguf_top(models: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -71,14 +87,16 @@ def filter_gguf_top(models: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return sorted(ggufs, key=lambda x: x["magnitude"], reverse=True)
 
 
-def export_to_csv(models: List[Dict[str, Any]], filepath: str):
+def export_to_csv(models: List[Dict[str, Any]], filepath: str, include_tags: bool = False):
     """Exports all model records and calculated metrics to a clean CSV."""
+    cols = get_csv_columns(include_tags=include_tags)
     with open(filepath, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
         writer.writeheader()
         for m in models:
             writer.writerow(m)
-    print(f"\n[✓] Exported {len(models)} models to: {filepath}")
+    tag_msg = " (Tags included)" if include_tags else " (Tags excluded, pass --tagdump to include)"
+    print(f"\n[✓] Exported {len(models)} models to: {filepath}{tag_msg}")
 
 
 def print_table(title: str, models: List[Dict[str, Any]], limit: int = 12):
@@ -113,6 +131,7 @@ def display_full_radar_summary(models: List[Dict[str, Any]]):
     """Renders comprehensive terminal leaderboards across all key discovery dimensions."""
     total = len(models)
     gguf_cnt = sum(1 for m in models if m.get("Is_GGUF") == 1)
+    derailed_cnt = sum(1 for m in models if m.get("Is_Derailed") == 1)
     unc_cnt = sum(1 for m in models if m.get("Is_Uncensored") == 1)
     ablit_cnt = sum(1 for m in models if m.get("Is_Abliterated") == 1)
     mm_cnt = sum(1 for m in models if m.get("Is_MMLLM") == 1)
@@ -122,8 +141,9 @@ def display_full_radar_summary(models: List[Dict[str, Any]]):
     print("#" * 95)
     print(f"  Total Scouted Models  : {total:,}")
     print(f"  GGUF Quantized        : {gguf_cnt:,} ({(gguf_cnt/total*100):.1f}%)" if total else "")
-    print(f"  Uncensored / Dealigned: {unc_cnt:,}")
-    print(f"  Abliterated Models    : {ablit_cnt:,}")
+    print(f"  Derailed Models (OR)  : {derailed_cnt:,}")
+    print(f"    - Uncensored        : {unc_cnt:,}")
+    print(f"    - Abliterated       : {ablit_cnt:,}")
     print(f"  Multimodal (MMLLM)    : {mm_cnt:,}")
 
     # 1. Hidden Gems Leaderboard
@@ -138,7 +158,7 @@ def display_full_radar_summary(models: List[Dict[str, Any]]):
     # 3. Top Abliterated & Uncensored Crafts
     unc_gems = filter_uncensored_gems(models)
     if unc_gems:
-        print_table("🔓 TOP UNCENSORED & ABLITERATED CRAFTS (Ranked by Quality Angle)", unc_gems)
+        print_table("🔓 TOP DERAILED CRAFTS (Uncensored & Abliterated, Ranked by Quality Angle)", unc_gems)
 
     # 4. Top GGUF Quantized Overall
     ggufs = filter_gguf_top(models)

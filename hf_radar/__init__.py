@@ -22,12 +22,16 @@ from .leaderboards import (
     filter_rising_stars,
     filter_mmllm_standouts,
     filter_uncensored_gems,
+    filter_derailed_gems,
     filter_gguf_top,
     export_to_csv,
-    display_full_radar_summary
+    display_full_radar_summary,
+    BASE_CSV_COLUMNS,
+    CSV_COLUMNS,
+    get_csv_columns
 )
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __all__ = [
     "HFClient",
     "GemRadarScout",
@@ -44,9 +48,13 @@ __all__ = [
     "filter_rising_stars",
     "filter_mmllm_standouts",
     "filter_uncensored_gems",
+    "filter_derailed_gems",
     "filter_gguf_top",
     "export_to_csv",
     "display_full_radar_summary",
+    "BASE_CSV_COLUMNS",
+    "CSV_COLUMNS",
+    "get_csv_columns",
     "DEFAULT_PIPELINE_TAGS",
     "DEFAULT_NUM_PARAMS",
     "CURATED_KEYWORDS"

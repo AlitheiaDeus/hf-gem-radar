@@ -69,6 +69,8 @@ def normalize_model(raw: Dict[str, Any]) -> Dict[str, Any]:
     
     created_at = clean_iso_date(raw_created)
     last_modified = clean_iso_date(raw_modified)
+    year_created = created_at[:4] if len(created_at) >= 4 and created_at[:4].isdigit() else ""
+    year_modified = last_modified[:4] if len(last_modified) >= 4 and last_modified[:4].isdigit() else ""
     excel_date = parse_date_to_excel_serial(raw_created)
     
     raw_tags = raw.get("tags") or []
@@ -83,7 +85,8 @@ def normalize_model(raw: Dict[str, Any]) -> Dict[str, Any]:
     is_safetensors = "safetensors" in tags_lower
     
     is_abliterated = any(k in tags_lower or k in model_id.lower() for k in ABLITERATED_KEYWORDS)
-    is_uncensored = is_abliterated or any(k in tags_lower or k in model_id.lower() for k in UNCENSORED_KEYWORDS)
+    is_uncensored = any(k in tags_lower or k in model_id.lower() for k in UNCENSORED_KEYWORDS)
+    is_derailed = is_uncensored or is_abliterated
     is_roleplay = any(k in tags_lower or k in model_id.lower() for k in ROLEPLAY_KEYWORDS)
     is_mmllm = pipeline_tag in MMLLM_TAGS or any(k in tags_lower for k in ("vision", "llava", "vl", "multimodal"))
 
@@ -95,7 +98,9 @@ def normalize_model(raw: Dict[str, Any]) -> Dict[str, Any]:
         "author": author,
         "pipeline_tag": pipeline_tag,
         "createdAt": created_at,
+        "yearCreated": year_created,
         "lastModified": last_modified,
+        "yearModified": year_modified,
         "Date_Created": excel_date,
         "downloads": metrics["downloads"],
         "likes": metrics["likes"],
@@ -112,6 +117,7 @@ def normalize_model(raw: Dict[str, Any]) -> Dict[str, Any]:
         "Is_Safetensors": 1 if is_safetensors else 0,
         "Is_Uncensored": 1 if is_uncensored else 0,
         "Is_Abliterated": 1 if is_abliterated else 0,
+        "Is_Derailed": 1 if is_derailed else 0,
         "Is_Roleplay": 1 if is_roleplay else 0,
         "Is_MMLLM": 1 if is_mmllm else 0,
         "tags": tags_str,
