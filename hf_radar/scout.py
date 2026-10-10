@@ -32,6 +32,7 @@ class GemRadarScout:
         min_downloads: int = 1,
         min_likes: int = 1,
         created_after: Optional[str] = None,  # e.g. "2024-01-01"
+        sort: str = "downloads",
         client: Optional[HFClient] = None
     ):
         self.num_parameters = num_parameters
@@ -40,12 +41,14 @@ class GemRadarScout:
         self.min_downloads = min_downloads
         self.min_likes = min_likes
         self.created_after = created_after
+        self.sort = sort
         self.client = client or HFClient()
         self._excel_cutoff = parse_date_to_excel_serial(f"{created_after}T00:00:00Z") if created_after else 0.0
 
     def scout_snapshot(
         self,
         max_pages_per_tag: Optional[int] = 1,
+        sort: Optional[str] = None,
         verbose: bool = True
     ) -> List[Dict[str, Any]]:
         """
@@ -56,11 +59,13 @@ class GemRadarScout:
         scouted_models: List[Dict[str, Any]] = []
 
         filter_fmt = "gguf" if self.gguf_only else None
+        sort_strategy = sort or self.sort
 
         for tag in self.pipeline_tags:
             if verbose:
                 fmt_str = " (GGUF Only)" if self.gguf_only else ""
-                print(f"[*] Scouting pipeline: '{tag}' [{self.num_parameters}]{fmt_str}...")
+                sort_str = f" [Sort: {sort_strategy}]" if sort_strategy != "downloads" else ""
+                print(f"[*] Scouting pipeline: '{tag}' [{self.num_parameters}]{sort_str}{fmt_str}...")
 
             def progress_cb(page, total):
                 if verbose and page % 5 == 0:
@@ -70,6 +75,7 @@ class GemRadarScout:
                 pipeline_tag=tag,
                 num_parameters=self.num_parameters,
                 filter_format=filter_fmt,
+                sort=sort_strategy,
                 full=True,
                 max_pages=max_pages_per_tag,
                 page_callback=progress_cb

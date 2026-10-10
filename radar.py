@@ -98,6 +98,12 @@ def parse_args():
         help="Cap on pages fetched per tag/query (default: 1 for snapshot, 5 for keywords; 0 or -1 for unlimited)"
     )
     parser.add_argument(
+        "--sort", "-s",
+        choices=["downloads", "likes", "trendingScore"],
+        default="downloads",
+        help="API sort order when pulling models (default: 'downloads'). Options: downloads, likes, trendingScore"
+    )
+    parser.add_argument(
         "--output", "-o",
         default="huggingface_snapshot.csv",
         help="Path to export the full analyzed dataset CSV (default: 'huggingface_snapshot.csv')"
@@ -116,6 +122,7 @@ def main():
     print(f"  Target Modalities : {', '.join(args.tags)}")
     print(f"  Format Filter     : {'GGUF Only' if args.gguf_only else 'All Formats (GGUF, Safetensors, etc.)'}")
     print(f"  Scouting Mode     : {args.mode.upper()}")
+    print(f"  API Sort Strategy : {args.sort}")
     print(f"  Recency Cutoff    : {args.after if args.after else 'None (All time)'}")
     print(f"  Max Pages / Tag   : {effective_max_pages if effective_max_pages is not None else 'Unlimited'}")
     print(f"  Output CSV Target : {args.output}")
@@ -127,13 +134,14 @@ def main():
         gguf_only=args.gguf_only,
         min_downloads=args.min_downloads,
         min_likes=args.min_likes,
-        created_after=args.after if args.after else None
+        created_after=args.after if args.after else None,
+        sort=args.sort
     )
 
     if args.mode == "keywords":
         models = scout.scout_keywords(max_pages_per_query=effective_max_pages)
     else:
-        models = scout.scout_snapshot(max_pages_per_tag=effective_max_pages)
+        models = scout.scout_snapshot(max_pages_per_tag=effective_max_pages, sort=args.sort)
 
     if not models:
         print("\n[!] No models met the specified criteria.")
