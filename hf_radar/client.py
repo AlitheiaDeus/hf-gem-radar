@@ -28,7 +28,7 @@ class HFClient:
     def fetch_paginated_models(
         self,
         pipeline_tag: Optional[str] = "text-generation",
-        num_parameters: Optional[str] = "min:3B,max:12B",
+        num_parameters: Optional[str] = "min:3B,max:6B",
         filter_format: Optional[str] = None,
         search_term: Optional[str] = None,
         sort: str = "downloads",
@@ -70,6 +70,9 @@ class HFClient:
         collected_models: List[Dict[str, Any]] = []
         page_count = 0
 
+        # Treat 0 or negative values as unlimited (None)
+        effective_max_pages = None if (max_pages is not None and max_pages <= 0) else max_pages
+
         while url:
             time.sleep(self.delay_seconds)
             page_count += 1
@@ -101,7 +104,7 @@ class HFClient:
             if page_callback:
                 page_callback(page_count, len(collected_models))
 
-            if max_pages and page_count >= max_pages:
+            if effective_max_pages and page_count >= effective_max_pages:
                 break
 
             # Hugging Face pagination uses Link: <url>; rel="next"

@@ -11,7 +11,7 @@ from .client import HFClient
 from .normalizer import normalize_model, parse_date_to_excel_serial
 
 DEFAULT_PIPELINE_TAGS = ["text-generation", "image-text-to-text", "video-text-to-text"]
-DEFAULT_NUM_PARAMS = "min:3B,max:12B"
+DEFAULT_NUM_PARAMS = "min:3B,max:6B"
 
 CURATED_KEYWORDS = [
     "nsfw", "uncensored", "rp", "roleplay", "abliterated", "obliterated",
@@ -45,7 +45,7 @@ class GemRadarScout:
 
     def scout_snapshot(
         self,
-        max_pages_per_tag: Optional[int] = None,
+        max_pages_per_tag: Optional[int] = 1,
         verbose: bool = True
     ) -> List[Dict[str, Any]]:
         """
@@ -104,7 +104,7 @@ class GemRadarScout:
         self,
         keywords: Optional[List[str]] = None,
         sort_strategies: Optional[List[str]] = None,
-        max_pages_per_query: int = 5,
+        max_pages_per_query: Optional[int] = 5,
         verbose: bool = True
     ) -> List[Dict[str, Any]]:
         """

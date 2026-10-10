@@ -6,7 +6,7 @@ Main entry point for HF Model Radar & Hidden Gem Scrubber.
 Surfaces standout local LLMs and MMLLMs within your hardware's operational range.
 
 Usage:
-    # 1-Click Run (Defaults: 3B-12B range, LLMs & MMLLMs, leaderboards + CSV export):
+    # 1-Click Run (Defaults: 3B-6B range, LLMs & MMLLMs, leaderboards + CSV export):
     python radar.py
 
     # Focus on GGUF models only:
@@ -24,6 +24,7 @@ Usage:
 
 import sys
 import argparse
+from typing import Optional
 from hf_radar import (
     GemRadarScout,
     display_full_radar_summary,
@@ -38,6 +39,13 @@ if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
+
+
+def resolve_max_pages(arg_val: Optional[int], mode: str) -> Optional[int]:
+    """Resolves page cap. 0 or -1 means unlimited (None). Defaults: 1 for snapshot, 5 for keywords."""
+    if arg_val is not None:
+        return None if arg_val <= 0 else arg_val
+    return 5 if mode == "keywords" else 1
 
 
 def parse_args():
@@ -87,7 +95,7 @@ def parse_args():
         "--max-pages",
         type=int,
         default=None,
-        help="Optional cap on pages fetched per tag/query (useful for fast scans)"
+        help="Cap on pages fetched per tag/query (default: 1 for snapshot, 5 for keywords; 0 or -1 for unlimited)"
     )
     parser.add_argument(
         "--output", "-o",
@@ -99,6 +107,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    effective_max_pages = resolve_max_pages(args.max_pages, args.mode)
 
     print("=" * 75)
     print("  HF GEM RADAR - LOCAL LLM & MMLLM SCOUT")
@@ -108,6 +117,7 @@ def main():
     print(f"  Format Filter     : {'GGUF Only' if args.gguf_only else 'All Formats (GGUF, Safetensors, etc.)'}")
     print(f"  Scouting Mode     : {args.mode.upper()}")
     print(f"  Recency Cutoff    : {args.after if args.after else 'None (All time)'}")
+    print(f"  Max Pages / Tag   : {effective_max_pages if effective_max_pages is not None else 'Unlimited'}")
     print(f"  Output CSV Target : {args.output}")
     print("=" * 75 + "\n")
 
@@ -121,9 +131,9 @@ def main():
     )
 
     if args.mode == "keywords":
-        models = scout.scout_keywords(max_pages_per_query=args.max_pages or 5)
+        models = scout.scout_keywords(max_pages_per_query=effective_max_pages)
     else:
-        models = scout.scout_snapshot(max_pages_per_tag=args.max_pages)
+        models = scout.scout_snapshot(max_pages_per_tag=effective_max_pages)
 
     if not models:
         print("\n[!] No models met the specified criteria.")
