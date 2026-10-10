@@ -1,7 +1,8 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 .venv/
 .env
 *.csv
 *.xlsx
 archive/
+AGENTS.md
